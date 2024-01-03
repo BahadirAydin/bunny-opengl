@@ -14,6 +14,7 @@ vec3 ks = vec3(0.8, 0.8, 0.8);   // specular reflectance coefficient
 vec3 lightPos = vec3(5, 5, 5);   // light position in world coordinates
 
 uniform vec3 eyePos;
+uniform vec3 checkpointColor;
 
 in vec4 fragWorldPos;
 in vec3 fragWorldNor;
@@ -34,6 +35,6 @@ void main(void)
 	float NdotL = dot(N, L); // for diffuse component
 	float NdotH = dot(N, H); // for specular component
 
-    fragColor = vec4(1,0,0,1);
+    fragColor = vec4(checkpointColor,1);
 
 }

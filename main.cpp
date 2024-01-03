@@ -668,13 +668,41 @@ glm::vec3 bunnyJumpDir(0, 0.2, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
 float bunnyMaxHeight = -2.2;
 bool increase = true;
+vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
+                                     glm::vec3(6, 0, 0)};
 
+int goodCheckpointIndex = 0;
+
+int score = 0;
+
+const float TIME_STEP = 0.05;
+const float THRESHOLD = 2.5;
 bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
-    float x = bunnyPos.x - checkpointPos.x;
-    float y = bunnyPos.y - checkpointPos.y;
-    float z = bunnyPos.z - checkpointPos.z;
-    float dist = sqrt(x * x + y * y + z * z);
-    return dist <= 1.5;
+    for (float i = 0; i < 1; i += TIME_STEP) {
+        glm::vec3 pos = bunnyPos + i * bunnyZDir * speed;
+        float x = pos.x - checkpointPos.x;
+        float y = pos.y - checkpointPos.y;
+        float z = pos.z - checkpointPos.z;
+        float dist = sqrt(x * x + y * y + z * z);
+        if (dist <= THRESHOLD) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void moveBunny(bool left) {
+    if (left) {
+        bunnyPos.x -= 1.1;
+    } else {
+        bunnyPos.x += 1.1;
+    }
+    if (bunnyPos.x > 6.5) {
+        bunnyPos.x = 6.5;
+    }
+    if (bunnyPos.x < -6.5) {
+        bunnyPos.x = -6.5;
+    }
 }
 
 void update() {
@@ -693,14 +721,16 @@ void update() {
     eyePos = glm::vec3(0, 2, bunnyPos.z + 10);
     viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, -5, bunnyPos.z - 10),
                                 glm::vec3(0, 1, 0));
-    if (eyePos.z <= checkpointPos.z) {
+    if (eyePos.z <= checkpointPos.z ||
+        isCollided(bunnyPos,
+                   checkpointPos + checkpoint_dirs[goodCheckpointIndex])) {
         checkpointPos.z = eyePos.z - 80;
+        goodCheckpointIndex = rand() % 3;
     }
 }
 
 void renderBunny() {
     activeProgramIndex = 0;
-
     update();
 
     glm::mat4 matT = glm::translate(glm::mat4(1.0), bunnyPos);
@@ -729,18 +759,25 @@ void renderBunny() {
     glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
-vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
-                                     glm::vec3(6, 0, 0)};
-
 void renderCheckpoint() {
     activeProgramIndex = 2;
+    GLuint checkpointColorLoc =
+        glGetUniformLocation(gProgram[2], "checkpointColor");
     for (int i = 0; i < 3; i++) {
         glm::mat4 matT =
             glm::translate(glm::mat4(1.0), checkpointPos + checkpoint_dirs[i]);
         glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1, 4, 0.8));
         modelingMatrix = matT * matS;
 
+        glm::vec3 checkpointColor;
+        if (i == goodCheckpointIndex) {
+            checkpointColor = glm::vec3(1, 1, 0);
+        } else {
+            checkpointColor = glm::vec3(1, 0, 0);
+        }
+
         glUseProgram(gProgram[activeProgramIndex]);
+        glUniform3fv(checkpointColorLoc, 1, glm::value_ptr(checkpointColor));
         glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE,
                            glm::value_ptr(projectionMatrix));
         glUniformMatrix4fv(viewingMatrixLoc[activeProgramIndex], 1, GL_FALSE,
@@ -791,9 +828,10 @@ void renderBoard() {
 void resetGame() {
     bunnyPos = bunnyStart;
     pos = glm::vec3(0, -5, -10);
+    goodCheckpointIndex = rand() % 3;
     checkpointPos = glm::vec3(0, -2, -80);
-    speed = 0.1;
-    acceleration = 0.001;
+    speed = 0.08;
+    acceleration = 0.0005;
 }
 
 void display() {
@@ -801,9 +839,15 @@ void display() {
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    if (isCollided(bunnyPos, checkpointPos)) {
-        resetGame();
+    std::cout << goodCheckpointIndex << std::endl;
+    for (int i = 0; i < 3; i++) {
+        if (i != goodCheckpointIndex &&
+            isCollided(bunnyPos, checkpointPos + checkpoint_dirs[i])) {
+            resetGame();
+            break;
+        }
     }
+
     speed += acceleration;
     renderBoard();
     renderBunny();
@@ -837,7 +881,9 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        ;
+        moveBunny(true);
+    } else if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        moveBunny(false);
     }
 }
 
