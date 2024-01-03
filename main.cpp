@@ -570,7 +570,7 @@ void renderBoard(){
     activeProgramIndex = 1;
 
 	glm::mat4 matT = glm::translate(glm::mat4(1.0),pos);
-	glm::mat4 matS = glm::scale(glm::mat4(1), glm::vec3(10, 5, 500));
+	glm::mat4 matS = glm::scale(glm::mat4(1), glm::vec3(10, 10, 100));
 	glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-90. / 180.) * M_PI, glm::vec3(1.0, 0.0, 0.0));
 	modelingMatrix = matT * matS *  matR; 
 
