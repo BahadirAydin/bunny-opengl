@@ -546,10 +546,10 @@ void renderBunny(){
     activeProgramIndex = 0;
 
     glm::mat4 matT = glm::translate(glm::mat4(1.0),bunnyPos);
-	glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(0.5, 0.5, 0.5));
+	glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1.1, 1.1, 1.1));
 	glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-90.0 / 180.) * M_PI, glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 matR2 = glm::rotate<float>(glm::mat4(1.0), (-10 / 180.) * M_PI, glm::vec3(1.0, 0.0, 0.0));
-	modelingMatrix = matT * matR2 * matR;
+	modelingMatrix = matT * matS * matR2 * matR;
 
     glUseProgram(gProgram[activeProgramIndex]);
     glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(projectionMatrix));
