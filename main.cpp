@@ -539,11 +539,26 @@ void drawModel()
 glm::vec3 start(0, -5, -10);
 glm::vec3 pos(0, -5, -10);
 glm::vec3 bunnyPos(0, -5, -8);
-glm::vec3 bunnyDir(0, 1, 0);
-int bunnyMaxHeight = 5;
+glm::vec3 bunnyDir(0, 0.2, 0);
+float bunnyMaxHeight = -2.2;
+bool increase = true;
 
 void renderBunny(){
     activeProgramIndex = 0;
+
+    if (increase){
+        bunnyPos += bunnyDir ;
+        if (bunnyPos.y >= bunnyMaxHeight){
+            increase = false;
+        }
+    }
+    else{
+        bunnyPos -= bunnyDir;
+        if (bunnyPos.y <= -5){
+            increase = true;
+        }
+    }
+
 
     glm::mat4 matT = glm::translate(glm::mat4(1.0),bunnyPos);
 	glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1.1, 1.1, 1.1));
