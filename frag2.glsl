@@ -34,10 +34,18 @@ void main(void)
 	float NdotL = dot(N, L); // for diffuse component
 	float NdotH = dot(N, H); // for specular component
 
-	vec3 diffuseColor = I * kd * max(0, NdotL);
-	vec3 specularColor = I * ks * pow(max(0, NdotH), 100);
-	vec3 ambientColor = Iamb * ka;
+    float offset = 0.0;
+    float scale = 0.5;
 
-	fragColor = vec4(diffuseColor + specularColor + ambientColor, 1);
-	//fragColor = vec4(specularColor + ambientColor, 1); //or try this, don't forget to change the active program in main.cpp
+    bool x = (int((fragWorldPos.x + offset) * scale) % 2) == 1;
+    bool y = (int((fragWorldPos.y + offset) * scale) % 2) == 1;
+    bool z = (int((fragWorldPos.z + offset) * scale) % 2) == 1;
+
+    bool xorXY = x != y;
+    if(xorXY != z) {
+        fragColor = vec4(0,0,0,1);
+    }
+    else {
+        fragColor = vec4(1,1,1,1);
+    }
 }

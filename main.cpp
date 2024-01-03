@@ -76,6 +76,7 @@ vector<Face> gFaces;
 GLuint gVertexAttribBuffer, gIndexBuffer;
 GLint gInVertexLoc, gInNormalLoc;
 int gVertexDataSizeInBytes, gNormalDataSizeInBytes;
+int gVertexDataSizeInBytesBoard, gNormalDataSizeInBytesBoard;
 
 bool ParseObj(const string& fileName)
 {
@@ -351,7 +352,6 @@ void initVBO()
 	glGenVertexArrays(1, &vao);
 	assert(vao > 0);
 	glBindVertexArray(vao);
-	cout << "vao = " << vao << endl;
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
@@ -390,13 +390,6 @@ void initVBO()
 		maxZ = std::max(maxZ, gVertices[i].z);
 	}
 
-	std::cout << "minX = " << minX << std::endl;
-	std::cout << "maxX = " << maxX << std::endl;
-	std::cout << "minY = " << minY << std::endl;
-	std::cout << "maxY = " << maxY << std::endl;
-	std::cout << "minZ = " << minZ << std::endl;
-	std::cout << "maxZ = " << maxZ << std::endl;
-
 	for (int i = 0; i < gNormals.size(); ++i)
 	{
 		normalData[3 * i] = gNormals[i].x;
@@ -417,13 +410,108 @@ void initVBO()
 	glBufferSubData(GL_ARRAY_BUFFER, gVertexDataSizeInBytes, gNormalDataSizeInBytes, normalData);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSizeInBytes, indexData, GL_STATIC_DRAW);
 
-	// done copying to GPU memory; can free now from CPU memory
 	delete[] vertexData;
 	delete[] normalData;
 	delete[] indexData;
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+}
+
+GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
+vector<Vertex> gVerticesBoard;
+vector<Normal> gNormalsBoard;
+vector<Face> gFacesBoard;
+vector<Texture> gTexturesBoard;
+
+void create_board() {
+    gVerticesBoard.push_back(Vertex(-1.0f, -1.0f, 0.0f));
+    gVerticesBoard.push_back(Vertex(1.0f, -1.0f, 0.0f));
+    gVerticesBoard.push_back(Vertex(1.0f, 1.0f, 0.0f));
+    gVerticesBoard.push_back(Vertex(-1.0f, 1.0f, 0.0f));
+
+    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
+    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
+    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
+    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
+
+    gTexturesBoard.push_back(Texture(0.0f, 0.0f));
+    gTexturesBoard.push_back(Texture(1.0f, 0.0f));
+    gTexturesBoard.push_back(Texture(1.0f, 1.0f));
+    gTexturesBoard.push_back(Texture(0.0f, 1.0f));
+
+    gFacesBoard.push_back(Face(new int[3]{ 0, 1, 2 }, new int[3]{ 0, 1, 2 }, new int[3]{ 0, 1, 2 }));
+    gFacesBoard.push_back(Face(new int[3]{ 0, 2, 3 }, new int[3]{ 0, 2, 3 }, new int[3]{ 0, 2, 3 }));
+}
+
+void initVBOBoard(){
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    assert(vao > 0);
+    glBindVertexArray(vao);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    assert(glGetError() == GL_NONE);
+
+    glGenBuffers(1, &gVertexAttribBufferBoard);
+    glGenBuffers(1, &gIndexBufferBoard);
+
+    assert(gVertexAttribBufferBoard > 0 && gIndexBufferBoard > 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferBoard);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferBoard);
+    create_board();
+
+    gVertexDataSizeInBytesBoard = gVerticesBoard.size() * 3 * sizeof(GLfloat);
+    gNormalDataSizeInBytesBoard = gNormalsBoard.size() * 3 * sizeof(GLfloat);
+    int indexDataSizeInBytes = gFacesBoard.size() * 3 * sizeof(GLuint);
+    GLfloat* vertexData = new GLfloat[gVerticesBoard.size() * 3];
+    GLfloat* normalData = new GLfloat[gNormalsBoard.size() * 3];
+    GLuint* indexData = new GLuint[gFacesBoard.size() * 3];
+
+    float minX = 1e6, maxX = -1e6;
+    float minY = 1e6, maxY = -1e6;
+    float minZ = 1e6, maxZ = -1e6;
+
+    for (int i = 0; i < gVerticesBoard.size(); i++)
+    {
+        vertexData[3 * i] = gVerticesBoard[i].x;
+        vertexData[3 * i + 1] = gVerticesBoard[i].y;
+        vertexData[3 * i + 2] = gVerticesBoard[i].z;
+
+        minX = std::min(minX, gVerticesBoard[i].x);
+        maxX = std::max(maxX, gVerticesBoard[i].x);
+        minY = std::min(minY, gVerticesBoard[i].y);
+        maxY = std::max(maxY, gVerticesBoard[i].y);
+        minZ = std::min(minZ, gVerticesBoard[i].z);
+        maxZ = std::max(maxZ, gVerticesBoard[i].z);
+    }
+
+    for (int i = 0; i < gNormalsBoard.size(); i++)
+    {
+        normalData[3 * i] = gNormalsBoard[i].x;
+        normalData[3 * i + 1] = gNormalsBoard[i].y;
+        normalData[3 * i + 2] = gNormalsBoard[i].z;
+    }
+    for (int i = 0; i < gFacesBoard.size(); i++)
+    {
+        indexData[3 * i] = gFacesBoard[i].vIndex[0];
+        indexData[3 * i + 1] = gFacesBoard[i].vIndex[1];
+        indexData[3 * i + 2] = gFacesBoard[i].vIndex[2];
+    }
+    glBufferData(GL_ARRAY_BUFFER, gVertexDataSizeInBytesBoard + gNormalDataSizeInBytesBoard, 0, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, gVertexDataSizeInBytesBoard, vertexData);
+    glBufferSubData(GL_ARRAY_BUFFER, gVertexDataSizeInBytesBoard, gNormalDataSizeInBytesBoard, normalData);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSizeInBytes, indexData, GL_STATIC_DRAW);
+
+    delete[] vertexData;
+    delete[] normalData;
+    delete[] indexData;
+
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0);
+    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,BUFFER_OFFSET(gVertexDataSizeInBytes));
+
 }
 
 void init()
@@ -434,6 +522,7 @@ void init()
 	glEnable(GL_DEPTH_TEST);
 	initShaders();
 	initVBO();
+    initVBOBoard();
 }
 
 void drawModel()
@@ -447,6 +536,58 @@ void drawModel()
 	glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
+glm::vec3 start(0, -5, -10);
+glm::vec3 pos(0, -5, -10);
+glm::vec3 bunnyPos(0, -5, -8);
+glm::vec3 bunnyDir(0, 1, 0);
+int bunnyMaxHeight = 5;
+
+void renderBunny(){
+    activeProgramIndex = 0;
+
+    glm::mat4 matT = glm::translate(glm::mat4(1.0),bunnyPos);
+	glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(0.5, 0.5, 0.5));
+	glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-90. / 180.) * M_PI, glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 matR2 = glm::rotate<float>(glm::mat4(1.0), (10. / 180.) * M_PI, glm::vec3(1.0, 0.0, 0.0));
+	modelingMatrix = matT * matR2* matR;
+
+    glUseProgram(gProgram[activeProgramIndex]);
+    glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    glUniformMatrix4fv(viewingMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(viewingMatrix));
+    glUniformMatrix4fv(modelingMatrixLoc[0], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+	glUniform3fv(eyePosLoc[activeProgramIndex], 1, glm::value_ptr(eyePos));
+
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+    glDrawElements(GL_TRIANGLES, gFaces.size()*3, GL_UNSIGNED_INT, 0);
+    
+}
+
+void renderBoard(){
+    activeProgramIndex = 1;
+
+	glm::mat4 matT = glm::translate(glm::mat4(1.0),pos);
+	glm::mat4 matS = glm::scale(glm::mat4(1), glm::vec3(10, 5, 500));
+	glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-90. / 180.) * M_PI, glm::vec3(1.0, 0.0, 0.0));
+	modelingMatrix = matT * matS *  matR; 
+
+    glUseProgram(gProgram[activeProgramIndex]);
+    glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    glUniformMatrix4fv(viewingMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(viewingMatrix));
+	glUniformMatrix4fv(modelingMatrixLoc[1], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
+    glUniform3fv(eyePosLoc[activeProgramIndex], 1, glm::value_ptr(eyePos));    
+
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferBoard);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferBoard);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+    glDrawElements(GL_TRIANGLES, gFacesBoard.size() * 3, GL_UNSIGNED_INT, 0);
+}
+
 void display()
 {
 	glClearColor(0, 0, 0, 1);
@@ -454,33 +595,9 @@ void display()
 	glClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	static float angle = 0;
 
-	float angleRad = (float)(angle / 180.0) * M_PI;
-
-	// Compute the modeling matrix 
-	glm::mat4 matT = glm::translate(glm::mat4(1.0), glm::vec3(0.f, 0.f, -3.f));
-	glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(0.5, 0.5, 0.5));
-	glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-180. / 180.) * M_PI, glm::vec3(0.0, 1.0, 0.0));
-	glm::mat4 matRz = glm::rotate(glm::mat4(1.0), angleRad, glm::vec3(0.0, 0.0, 1.0));
-	modelingMatrix = matT * matRz * matR; // starting from right side, rotate around Y to turn back, then rotate around Z some more at each frame, then translate.
-
-	// or... (care for the order! first the very bottom one is applied)
-	//modelingMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0.f, 0.f, -3.f));
-	//modelingMatrix = glm::rotate(modelingMatrix, angleRad, glm::vec3(0.0, 0.0, 1.0));
-	//modelingMatrix = glm::rotate<float>(modelingMatrix, (-180. / 180.) * M_PI, glm::vec3(0.0, 1.0, 0.0));
-
-	// Set the active program and the values of its uniform variables
-	glUseProgram(gProgram[activeProgramIndex]);
-	glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-	glUniformMatrix4fv(viewingMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(viewingMatrix));
-	glUniformMatrix4fv(modelingMatrixLoc[activeProgramIndex], 1, GL_FALSE, glm::value_ptr(modelingMatrix));
-	glUniform3fv(eyePosLoc[activeProgramIndex], 1, glm::value_ptr(eyePos));
-
-	// Draw the scene
-	drawModel();
-
-	angle += 0.9;
+    renderBoard();
+    renderBunny();
 }
 
 void reshape(GLFWwindow* window, int w, int h)
