@@ -34,8 +34,8 @@ void main(void)
 	float NdotL = dot(N, L); // for diffuse component
 	float NdotH = dot(N, H); // for specular component
 
-    float offset = 0.0;
-    float scale = 0.5;
+    float offset = 100;
+    float scale = 0.3;
 
     bool x = (int((fragWorldPos.x + offset) * scale) % 2) == 1;
     bool y = (int((fragWorldPos.y + offset) * scale) % 2) == 1;
@@ -43,9 +43,9 @@ void main(void)
 
     bool xorXY = x != y;
     if(xorXY != z) {
-        fragColor = vec4(0,0,0,1);
+        fragColor = vec4(0.0039,0.121,0.023,1);
     }
     else {
-        fragColor = vec4(1,1,1,1);
+        fragColor = vec4(0.898,0.909,0.784,1);
     }
 }
