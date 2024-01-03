@@ -21,13 +21,13 @@
 
 using namespace std;
 
-GLuint gProgram[2];
+GLuint gProgram[3];
 int gWidth, gHeight;
 
-GLint modelingMatrixLoc[2];
-GLint viewingMatrixLoc[2];
-GLint projectionMatrixLoc[2];
-GLint eyePosLoc[2];
+GLint modelingMatrixLoc[3];
+GLint viewingMatrixLoc[3];
+GLint projectionMatrixLoc[3];
+GLint eyePosLoc[3];
 
 glm::mat4 projectionMatrix;
 glm::mat4 viewingMatrix;
@@ -74,7 +74,9 @@ vector<Face> gFaces;
 GLuint gVertexAttribBuffer, gIndexBuffer;
 GLint gInVertexLoc, gInNormalLoc;
 int gVertexDataSizeInBytes, gNormalDataSizeInBytes;
+
 int gVertexDataSizeInBytesBoard, gNormalDataSizeInBytesBoard;
+int gVertexDataSizeinBytesCheckpoint, gNormalDataSizeInBytesCheckpoint;
 
 bool ParseObj(const string &fileName) {
     fstream myfile;
@@ -273,6 +275,7 @@ void initShaders() {
 
     gProgram[0] = glCreateProgram();
     gProgram[1] = glCreateProgram();
+    gProgram[2] = glCreateProgram();
 
     // Create the shaders for both programs
 
@@ -282,6 +285,9 @@ void initShaders() {
     GLuint vs2 = createVS("vert2.glsl");
     GLuint fs2 = createFS("frag2.glsl");
 
+    GLuint vs3 = createVS("vert3.glsl");
+    GLuint fs3 = createFS("frag3.glsl");
+
     // Attach the shaders to the programs
 
     glAttachShader(gProgram[0], vs1);
@@ -290,6 +296,8 @@ void initShaders() {
     glAttachShader(gProgram[1], vs2);
     glAttachShader(gProgram[1], fs2);
 
+    glAttachShader(gProgram[2], vs3);
+    glAttachShader(gProgram[2], fs3);
     // Link the programs
 
     glLinkProgram(gProgram[0]);
@@ -309,9 +317,16 @@ void initShaders() {
         exit(-1);
     }
 
+    glLinkProgram(gProgram[2]);
+    glGetProgramiv(gProgram[2], GL_LINK_STATUS, &status);
+
+    if (status != GL_TRUE) {
+        cout << "Program link failed" << endl;
+        exit(-1);
+    }
     // Get the locations of the uniform variables from both programs
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 3; ++i) {
         modelingMatrixLoc[i] =
             glGetUniformLocation(gProgram[i], "modelingMatrix");
         viewingMatrixLoc[i] =
@@ -494,6 +509,143 @@ void initVBOBoard() {
                           BUFFER_OFFSET(gVertexDataSizeInBytes));
 }
 
+GLuint gVertexAttribBufferCheckpoint, gIndexBufferCheckpoint;
+vector<Vertex> gVerticesCheckpoint;
+vector<Normal> gNormalsCheckpoint;
+vector<Face> gFacesCheckpoint;
+vector<Texture> gTexturesCheckpoint;
+
+void create_checkpoint() {
+    // Vertices of the 3D rectangular object
+    gVerticesCheckpoint.push_back(Vertex(-0.5f, -0.5f, -0.5f)); // Vertex 0
+    gVerticesCheckpoint.push_back(Vertex(0.5f, -0.5f, -0.5f));  // Vertex 1
+    gVerticesCheckpoint.push_back(Vertex(0.5f, 0.5f, -0.5f));   // Vertex 2
+    gVerticesCheckpoint.push_back(Vertex(-0.5f, 0.5f, -0.5f));  // Vertex 3
+    gVerticesCheckpoint.push_back(Vertex(-0.5f, -0.5f, 0.5f));  // Vertex 4
+    gVerticesCheckpoint.push_back(Vertex(0.5f, -0.5f, 0.5f));   // Vertex 5
+    gVerticesCheckpoint.push_back(Vertex(0.5f, 0.5f, 0.5f));    // Vertex 6
+    gVerticesCheckpoint.push_back(Vertex(-0.5f, 0.5f, 0.5f));   // Vertex 7
+
+    // Normals for each face of the rectangular object
+    gNormalsCheckpoint.push_back(Normal(0.0f, 0.0f, -1.0f)); // Face 0 (front)
+    gNormalsCheckpoint.push_back(Normal(0.0f, 0.0f, 1.0f));  // Face 1 (back)
+    gNormalsCheckpoint.push_back(Normal(0.0f, -1.0f, 0.0f)); // Face 2 (bottom)
+    gNormalsCheckpoint.push_back(Normal(0.0f, 1.0f, 0.0f));  // Face 3 (top)
+    gNormalsCheckpoint.push_back(Normal(-1.0f, 0.0f, 0.0f)); // Face 4 (left)
+    gNormalsCheckpoint.push_back(Normal(1.0f, 0.0f, 0.0f));  // Face 5 (right)
+
+    // Texture coordinates for each vertex of the rectangular object
+    gTexturesCheckpoint.push_back(Texture(0.0f, 0.0f));
+    gTexturesCheckpoint.push_back(Texture(1.0f, 0.0f));
+    gTexturesCheckpoint.push_back(Texture(1.0f, 1.0f));
+    gTexturesCheckpoint.push_back(Texture(0.0f, 1.0f));
+    gTexturesCheckpoint.push_back(Texture(0.0f, 0.0f));
+    gTexturesCheckpoint.push_back(Texture(1.0f, 0.0f));
+    gTexturesCheckpoint.push_back(Texture(1.0f, 1.0f));
+    gTexturesCheckpoint.push_back(Texture(0.0f, 1.0f));
+
+    // Faces of the rectangular object
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 1, 2}, new int[3]{0, 1, 2}, new int[3]{0, 1, 2}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 2, 3}, new int[3]{0, 2, 3}, new int[3]{0, 2, 3}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{4, 5, 6}, new int[3]{4, 5, 6}, new int[3]{4, 5, 6}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{4, 6, 7}, new int[3]{4, 6, 7}, new int[3]{4, 6, 7}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 4, 7}, new int[3]{0, 4, 7}, new int[3]{0, 4, 7}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 7, 3}, new int[3]{0, 7, 3}, new int[3]{0, 7, 3}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{1, 5, 6}, new int[3]{1, 5, 6}, new int[3]{1, 5, 6}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{1, 6, 2}, new int[3]{1, 6, 2}, new int[3]{1, 6, 2}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{3, 2, 6}, new int[3]{3, 2, 6}, new int[3]{3, 2, 6}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{3, 6, 7}, new int[3]{3, 6, 7}, new int[3]{3, 6, 7}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 1, 5}, new int[3]{0, 1, 5}, new int[3]{0, 1, 5}));
+    gFacesCheckpoint.push_back(
+        Face(new int[3]{0, 5, 4}, new int[3]{0, 5, 4}, new int[3]{0, 5, 4}));
+}
+
+void initVBOCheckpoint() {
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    assert(vao > 0);
+    glBindVertexArray(vao);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    assert(glGetError() == GL_NONE);
+
+    glGenBuffers(1, &gVertexAttribBufferCheckpoint);
+    glGenBuffers(1, &gIndexBufferCheckpoint);
+
+    assert(gVertexAttribBufferCheckpoint > 0 && gIndexBufferCheckpoint > 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferCheckpoint);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferCheckpoint);
+    create_checkpoint();
+
+    gVertexDataSizeinBytesCheckpoint =
+        gVerticesCheckpoint.size() * 3 * sizeof(GLfloat);
+    gNormalDataSizeInBytesCheckpoint =
+        gNormalsCheckpoint.size() * 3 * sizeof(GLfloat);
+    int indexDataSizeInBytes = gFacesCheckpoint.size() * 3 * sizeof(GLuint);
+    GLfloat *vertexData = new GLfloat[gVerticesCheckpoint.size() * 3];
+    GLfloat *normalData = new GLfloat[gNormalsCheckpoint.size() * 3];
+    GLuint *indexData = new GLuint[gFacesCheckpoint.size() * 3];
+
+    float minX = 1e6, maxX = -1e6;
+    float minY = 1e6, maxY = -1e6;
+    float minZ = 1e6, maxZ = -1e6;
+
+    for (int i = 0; i < gVerticesCheckpoint.size(); i++) {
+        vertexData[3 * i] = gVerticesCheckpoint[i].x;
+        vertexData[3 * i + 1] = gVerticesCheckpoint[i].y;
+        vertexData[3 * i + 2] = gVerticesCheckpoint[i].z;
+
+        minX = std::min(minX, gVerticesCheckpoint[i].x);
+        maxX = std::max(maxX, gVerticesCheckpoint[i].x);
+        minY = std::min(minY, gVerticesCheckpoint[i].y);
+        maxY = std::max(maxY, gVerticesCheckpoint[i].y);
+        minZ = std::min(minZ, gVerticesCheckpoint[i].z);
+        maxZ = std::max(maxZ, gVerticesCheckpoint[i].z);
+    }
+
+    for (int i = 0; i < gNormalsCheckpoint.size(); i++) {
+        normalData[3 * i] = gNormalsCheckpoint[i].x;
+        normalData[3 * i + 1] = gNormalsCheckpoint[i].y;
+        normalData[3 * i + 2] = gNormalsCheckpoint[i].z;
+    }
+    for (int i = 0; i < gFacesCheckpoint.size(); i++) {
+        indexData[3 * i] = gFacesCheckpoint[i].vIndex[0];
+        indexData[3 * i + 1] = gFacesCheckpoint[i].vIndex[1];
+        indexData[3 * i + 2] = gFacesCheckpoint[i].vIndex[2];
+    }
+    glBufferData(GL_ARRAY_BUFFER,
+                 gVertexDataSizeinBytesCheckpoint +
+                     gNormalDataSizeInBytesCheckpoint,
+                 0, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, gVertexDataSizeinBytesCheckpoint,
+                    vertexData);
+    glBufferSubData(GL_ARRAY_BUFFER, gVertexDataSizeinBytesCheckpoint,
+                    gNormalDataSizeInBytesCheckpoint, normalData);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSizeInBytes, indexData,
+                 GL_STATIC_DRAW);
+
+    delete[] vertexData;
+    delete[] normalData;
+    delete[] indexData;
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0,
+                          BUFFER_OFFSET(gVertexDataSizeInBytes));
+}
+
 void init() {
     ParseObj("bunny.obj");
     // ParseObj("bunny.obj");
@@ -502,21 +654,13 @@ void init() {
     initShaders();
     initVBO();
     initVBOBoard();
-}
-
-void drawModel() {
-    // glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
-
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0,
-    // BUFFER_OFFSET(gVertexDataSizeInBytes));
-
-    glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
+    initVBOCheckpoint();
 }
 
 glm::vec3 bunnyStart(0, -5, -10);
 glm::vec3 pos(0, -5, -10);
+glm::vec3 checkpointPos(0, -2, -80);
+
 glm::vec3 bunnyPos(0, -5, -8);
 float speed = 0.1;
 float acceleration = 0.001;
@@ -525,7 +669,15 @@ glm::vec3 bunnyZDir(0, 0, -1);
 float bunnyMaxHeight = -2.2;
 bool increase = true;
 
-void update(){
+bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
+    float x = bunnyPos.x - checkpointPos.x;
+    float y = bunnyPos.y - checkpointPos.y;
+    float z = bunnyPos.z - checkpointPos.z;
+    float dist = sqrt(x * x + y * y + z * z);
+    return dist <= 1.5;
+}
+
+void update() {
     if (increase) {
         bunnyPos += bunnyJumpDir;
         if (bunnyPos.y >= bunnyMaxHeight) {
@@ -539,7 +691,11 @@ void update(){
     }
     bunnyPos += bunnyZDir * speed;
     eyePos = glm::vec3(0, 2, bunnyPos.z + 10);
-    viewingMatrix = glm::lookAt(eyePos,glm::vec3(0,-5, bunnyPos.z-10), glm::vec3(0, 1, 0));
+    viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, -5, bunnyPos.z - 10),
+                                glm::vec3(0, 1, 0));
+    if (eyePos.z <= checkpointPos.z) {
+        checkpointPos.z = eyePos.z - 80;
+    }
 }
 
 void renderBunny() {
@@ -573,10 +729,40 @@ void renderBunny() {
     glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
+vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
+                                     glm::vec3(6, 0, 0)};
+
+void renderCheckpoint() {
+    activeProgramIndex = 2;
+    for (int i = 0; i < 3; i++) {
+        glm::mat4 matT =
+            glm::translate(glm::mat4(1.0), checkpointPos + checkpoint_dirs[i]);
+        glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1, 4, 0.8));
+        modelingMatrix = matT * matS;
+
+        glUseProgram(gProgram[activeProgramIndex]);
+        glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE,
+                           glm::value_ptr(projectionMatrix));
+        glUniformMatrix4fv(viewingMatrixLoc[activeProgramIndex], 1, GL_FALSE,
+                           glm::value_ptr(viewingMatrix));
+        glUniformMatrix4fv(modelingMatrixLoc[2], 1, GL_FALSE,
+                           glm::value_ptr(modelingMatrix));
+        glUniform3fv(eyePosLoc[activeProgramIndex], 1, glm::value_ptr(eyePos));
+
+        glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferCheckpoint);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferCheckpoint);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0,
+                              BUFFER_OFFSET(gVertexDataSizeinBytesCheckpoint));
+        glDrawElements(GL_TRIANGLES, gFacesCheckpoint.size() * 3,
+                       GL_UNSIGNED_INT, 0);
+    }
+}
+
 glm::vec3 boardDir(0, 0, -10);
 void renderBoard() {
     activeProgramIndex = 1;
-
     pos += boardDir;
     glm::mat4 matT = glm::translate(glm::mat4(1.0), pos);
     glm::mat4 matS = glm::scale(glm::mat4(1), glm::vec3(10, 10, 100000));
@@ -602,14 +788,26 @@ void renderBoard() {
     glDrawElements(GL_TRIANGLES, gFacesBoard.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
+void resetGame() {
+    bunnyPos = bunnyStart;
+    pos = glm::vec3(0, -5, -10);
+    checkpointPos = glm::vec3(0, -2, -80);
+    speed = 0.1;
+    acceleration = 0.001;
+}
+
 void display() {
     glClearColor(0, 0, 0, 1);
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    if (isCollided(bunnyPos, checkpointPos)) {
+        resetGame();
+    }
     speed += acceleration;
     renderBoard();
     renderBunny();
+    renderCheckpoint();
 }
 
 void reshape(GLFWwindow *window, int w, int h) {
@@ -638,18 +836,8 @@ void reshape(GLFWwindow *window, int w, int h) {
 void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    } else if (key == GLFW_KEY_G && action == GLFW_PRESS) {
-        activeProgramIndex = 0;
-    } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-        activeProgramIndex = 1;
-    } else if (key == GLFW_KEY_F && action == GLFW_PRESS) {
-        glShadeModel(GL_FLAT);
-    } else if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-        glShadeModel(GL_SMOOTH);
-    } else if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    } else if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    } else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        ;
     }
 }
 
