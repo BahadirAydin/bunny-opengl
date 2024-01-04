@@ -1,21 +1,21 @@
 #include <cstdio>
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <map>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <vector>
-
-#define _USE_MATH_DEFINES
-#include <GL/glew.h>
-#include <math.h>
-
-// #include <OpenGL/gl3.h>   // The GL Header File
+#include <GL/glew.h>   // The GL Header File
+#include <GL/gl.h>   // The GL Header File
 #include <GLFW/glfw3.h> // The GLFW header
-#include <glm/glm.hpp>  // GL Math library header
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
@@ -839,7 +839,6 @@ void display() {
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    std::cout << goodCheckpointIndex << std::endl;
     for (int i = 0; i < 3; i++) {
         if (i != goodCheckpointIndex &&
             isCollided(bunnyPos, checkpointPos + checkpoint_dirs[i])) {
