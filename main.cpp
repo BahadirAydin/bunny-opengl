@@ -34,6 +34,7 @@ glm::mat4 viewingMatrix;
 glm::mat4 modelingMatrix;
 glm::vec3 eyePos(0, 0, 0);
 
+GLuint VAO, VBO;
 int activeProgramIndex = 0;
 
 struct Vertex {
@@ -313,7 +314,7 @@ void initShaders() {
     glAttachShader(gProgram[3], vs4);
     glAttachShader(gProgram[3], fs4);
 
-    glBindAttribLocation(gProgram[3], 2, "vertex");  // ????
+    // glBindAttribLocation(gProgram[3], 0, "vertex");  // ????
 
     // Link the programs
 
@@ -433,13 +434,12 @@ void initVBO() {
                           BUFFER_OFFSET(gVertexDataSizeInBytes));
 }
 
-GLuint gTextVBO;
 void initFonts(int windowWidth, int windowHeight)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<GLfloat>(windowWidth), 0.0f, static_cast<GLfloat>(windowHeight));
+    glm::mat4 projection = glm::ortho(0.0f, 1000.0f, 0.0f, 800.0f);
     glUseProgram(gProgram[3]);
     glUniformMatrix4fv(glGetUniformLocation(gProgram[3], "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -498,18 +498,15 @@ void initFonts(int windowWidth, int windowHeight)
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    glGenBuffers(1, &gTextVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, gTextVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);      
 }
 
 GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
@@ -825,11 +822,16 @@ void update() {
     eyePos = glm::vec3(0, 2, bunnyPos.z + 10);
     viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, -5, bunnyPos.z - 10),
                                 glm::vec3(0, 1, 0));
-    if (eyePos.z <= checkpointPos.z ||
-        isCollided(bunnyPos,
-                   checkpointPos + checkpoint_dirs[goodCheckpointIndex])) {
+    if (eyePos.z <= checkpointPos.z )
+        {
         checkpointPos.z = eyePos.z - 80;
         goodCheckpointIndex = rand() % 3;
+    }
+    if (  isCollided(bunnyPos,
+                   checkpointPos + checkpoint_dirs[goodCheckpointIndex])){
+        checkpointPos.z = eyePos.z - 80;
+        goodCheckpointIndex = rand() % 3;
+        score += 1000;
     }
 }
 
@@ -929,6 +931,50 @@ void renderBoard() {
     glDrawElements(GL_TRIANGLES, gFacesBoard.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
+void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
+{
+    activeProgramIndex = 3;
+    glUseProgram(gProgram[activeProgramIndex]);
+    glUniform3f(glGetUniformLocation(gProgram[activeProgramIndex], "textColor"), color.x, color.y, color.z);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(VAO);
+
+    // iterate through all characters
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++)
+    {
+        Character ch = Characters[*c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+        // update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },            
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }           
+        };
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void resetGame() {
     bunnyPos = bunnyStart;
     pos = glm::vec3(0, -5, -10);
@@ -936,6 +982,7 @@ void resetGame() {
     checkpointPos = glm::vec3(0, -2, -80);
     speed = 0.08;
     acceleration = 0.0005;
+    score = 0;
 }
 
 void display() {
@@ -952,9 +999,15 @@ void display() {
     }
 
     speed += acceleration;
+
+    initVBO();
+    initVBOBoard();
+    initVBOCheckpoint();
     renderBoard();
     renderBunny();
     renderCheckpoint();
+    std::string scoreStr = std::to_string(score);
+    renderText( "Score:" + scoreStr, 25.0f, 25.0f, 1.0f, glm::vec3(1, 0.0f, 0.0f));
 }
 
 void reshape(GLFWwindow *window, int w, int h) {
