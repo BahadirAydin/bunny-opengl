@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <map>
+#include <map> 
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -21,7 +21,7 @@
 
 using namespace std;
 
-GLuint gProgram[3];
+GLuint gProgram[4];
 int gWidth, gHeight;
 
 GLint modelingMatrixLoc[3];
@@ -65,6 +65,15 @@ struct Face {
     }
     GLuint vIndex[3], tIndex[3], nIndex[3];
 };
+
+struct Character {
+    GLuint TextureID;   // ID handle of the glyph texture
+    glm::ivec2 Size;    // Size of glyph
+    glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
+    GLuint Advance;     // Horizontal offset to advance to next glyph
+};
+
+std::map<GLchar, Character> Characters;
 
 vector<Vertex> gVertices;
 vector<Texture> gTextures;
@@ -276,6 +285,7 @@ void initShaders() {
     gProgram[0] = glCreateProgram();
     gProgram[1] = glCreateProgram();
     gProgram[2] = glCreateProgram();
+    gProgram[3] = glCreateProgram();
 
     // Create the shaders for both programs
 
@@ -288,7 +298,8 @@ void initShaders() {
     GLuint vs3 = createVS("vert3.glsl");
     GLuint fs3 = createFS("frag3.glsl");
 
-    // Attach the shaders to the programs
+    GLuint vs4 = createVS("vert_text.glsl");
+    GLuint fs4 = createFS("frag_text.glsl");
 
     glAttachShader(gProgram[0], vs1);
     glAttachShader(gProgram[0], fs1);
@@ -298,6 +309,12 @@ void initShaders() {
 
     glAttachShader(gProgram[2], vs3);
     glAttachShader(gProgram[2], fs3);
+
+    glAttachShader(gProgram[3], vs4);
+    glAttachShader(gProgram[3], fs4);
+
+    glBindAttribLocation(gProgram[3], 2, "vertex");  // ????
+
     // Link the programs
 
     glLinkProgram(gProgram[0]);
@@ -324,7 +341,14 @@ void initShaders() {
         cout << "Program link failed" << endl;
         exit(-1);
     }
-    // Get the locations of the uniform variables from both programs
+
+    glLinkProgram(gProgram[3]);
+    glGetProgramiv(gProgram[3], GL_LINK_STATUS, &status);
+
+    if (status != GL_TRUE) {
+        cout << "Program link failed 3" << endl;
+        exit(-1);
+    }
 
     for (int i = 0; i < 3; ++i) {
         modelingMatrixLoc[i] =
@@ -407,6 +431,85 @@ void initVBO() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0,
                           BUFFER_OFFSET(gVertexDataSizeInBytes));
+}
+
+GLuint gTextVBO;
+void initFonts(int windowWidth, int windowHeight)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<GLfloat>(windowWidth), 0.0f, static_cast<GLfloat>(windowHeight));
+    glUseProgram(gProgram[3]);
+    glUniformMatrix4fv(glGetUniformLocation(gProgram[3], "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+    }
+
+    FT_Face face;
+    if (FT_New_Face(ft, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+    }
+    FT_Set_Pixel_Sizes(face, 0, 48);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+
+    for (GLubyte c = 0; c < 128; c++)
+    {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+        {
+            std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            continue;
+        }
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_RED,
+                face->glyph->bitmap.width,
+                face->glyph->bitmap.rows,
+                0,
+                GL_RED,
+                GL_UNSIGNED_BYTE,
+                face->glyph->bitmap.buffer
+                );
+        // Set texture options
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Now store character for later use
+        Character character = {
+            texture,
+            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+            face->glyph->advance.x
+        };
+        Characters.insert(std::pair<GLchar, Character>(c, character));
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glGenBuffers(1, &gTextVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, gTextVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
@@ -652,6 +755,7 @@ void init() {
 
     glEnable(GL_DEPTH_TEST);
     initShaders();
+    initFonts(1000, 800);
     initVBO();
     initVBOBoard();
     initVBOCheckpoint();
@@ -676,7 +780,7 @@ int goodCheckpointIndex = 0;
 int score = 0;
 
 const float TIME_STEP = 0.05;
-const float THRESHOLD = 2.5;
+const float THRESHOLD = 3;
 bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
     for (float i = 0; i < 1; i += TIME_STEP) {
         glm::vec3 pos = bunnyPos + i * bunnyZDir * speed;
