@@ -314,7 +314,7 @@ void initShaders() {
     glAttachShader(gProgram[3], vs4);
     glAttachShader(gProgram[3], fs4);
 
-    // glBindAttribLocation(gProgram[3], 0, "vertex");  // ????
+    glBindAttribLocation(gProgram[3], 0, "vertex");  // ????
 
     // Link the programs
 
@@ -498,15 +498,15 @@ void initFonts(int windowWidth, int windowHeight)
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
-    glGenVertexArrays(1, &VAO);
+    // glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
+    // glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);      
+    // glBindVertexArray(0);      
 }
 
 GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
@@ -751,11 +751,11 @@ void init() {
     // ParseObj("bunny.obj");
 
     glEnable(GL_DEPTH_TEST);
-    initShaders();
-    initFonts(1000, 800);
     initVBO();
     initVBOBoard();
     initVBOCheckpoint();
+    initShaders();
+    initFonts(1000, 800);
 }
 
 glm::vec3 bunnyStart(0, -5, -10);
@@ -765,9 +765,11 @@ glm::vec3 checkpointPos(0, -2, -80);
 glm::vec3 bunnyPos(0, -5, -8);
 float speed = 0.1;
 float acceleration = 0.001;
+float angleAcceleration = 0.0001;
 glm::vec3 bunnyJumpDir(0, 0.2, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
 float bunnyMaxHeight = -2.2;
+bool bunnyHappyState = false;
 bool increase = true;
 vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
                                      glm::vec3(6, 0, 0)};
@@ -832,8 +834,12 @@ void update() {
         checkpointPos.z = eyePos.z - 80;
         goodCheckpointIndex = rand() % 3;
         score += 1000;
+        bunnyHappyState = true;
     }
 }
+
+float angle = 0;
+float rotationSpeed = 0.1;
 
 void renderBunny() {
     activeProgramIndex = 0;
@@ -846,6 +852,16 @@ void renderBunny() {
     glm::mat4 matR2 = glm::rotate<float>(glm::mat4(1.0), (-10 / 180.) * M_PI,
                                          glm::vec3(1.0, 0.0, 0.0));
     modelingMatrix = matT * matS * matR2 * matR;
+    if (bunnyHappyState) {
+        modelingMatrix = modelingMatrix * glm::rotate<float>(
+                                              glm::mat4(1.0), angle,
+                                              glm::vec3(0.0, 1.0, 0.0));
+        angle += rotationSpeed;
+        if (angle >= 2 * M_PI) {
+            bunnyHappyState = false;
+            angle = 0;
+        }
+    }
 
     glUseProgram(gProgram[activeProgramIndex]);
     glUniformMatrix4fv(projectionMatrixLoc[activeProgramIndex], 1, GL_FALSE,
@@ -937,7 +953,7 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     glUseProgram(gProgram[activeProgramIndex]);
     glUniform3f(glGetUniformLocation(gProgram[activeProgramIndex], "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(VAO);
+    // glBindVertexArray(VAO);
 
     // iterate through all characters
     std::string::const_iterator c;
@@ -965,13 +981,13 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
         // update content of VBO memory
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ARRAY_BUFFER, 0);
         // render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
         // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
         x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
-    glBindVertexArray(0);
+    // glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -981,8 +997,10 @@ void resetGame() {
     goodCheckpointIndex = rand() % 3;
     checkpointPos = glm::vec3(0, -2, -80);
     speed = 0.08;
+    rotationSpeed = 0.1;
     acceleration = 0.0005;
     score = 0;
+    bunnyHappyState = false;
 }
 
 void display() {
@@ -999,15 +1017,17 @@ void display() {
     }
 
     speed += acceleration;
+    rotationSpeed += angleAcceleration;
 
-    initVBO();
-    initVBOBoard();
-    initVBOCheckpoint();
     renderBoard();
     renderBunny();
     renderCheckpoint();
     std::string scoreStr = std::to_string(score);
-    renderText( "Score:" + scoreStr, 25.0f, 25.0f, 1.0f, glm::vec3(1, 0.0f, 0.0f));
+    if(score == 0){
+        renderText( "Score:" + scoreStr, 25.0f, 750.0f, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+    } else{
+        renderText( "Score:" + scoreStr, 25.0f, 750.0f, 1.0f, glm::vec3(0.929, 0.913f, 0.0f));
+    }
 }
 
 void reshape(GLFWwindow *window, int w, int h) {
