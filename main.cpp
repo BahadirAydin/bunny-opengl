@@ -794,11 +794,12 @@ bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
     return false;
 }
 
+const float BUNNY_MOVE_STEP = 1.5;
 void moveBunny(bool left) {
     if (left) {
-        bunnyPos.x -= 1.1;
+        bunnyPos.x -= BUNNY_MOVE_STEP;
     } else {
-        bunnyPos.x += 1.1;
+        bunnyPos.x += BUNNY_MOVE_STEP;
     }
     if (bunnyPos.x > 6.5) {
         bunnyPos.x = 6.5;
