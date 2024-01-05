@@ -1033,6 +1033,7 @@ void display() {
     renderBoard();
     renderBunny();
     renderCheckpoint();
+    score += speed * 10;
     std::string scoreStr = std::to_string(score);
     if (score == 0) {
         renderText("Score:" + scoreStr, 25.0f, 750.0f, 1.0f,
