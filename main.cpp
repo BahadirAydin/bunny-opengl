@@ -802,7 +802,7 @@ float speed = 0.1;
 float acceleration = 0.001;
 float horizontalAcceleration = 0.0008;
 float angleAcceleration = 0.0001;
-glm::vec3 bunnyJumpDir(0, 0.2, 0);
+glm::vec3 bunnyJumpDir(0, 0.25, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
 float bunnyMaxHeight = -2.0;
 bool bunnyHappyState = false;
