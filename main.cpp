@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <ft2build.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -16,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include <ft2build.h>
 #include FT_FREETYPE_H
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
