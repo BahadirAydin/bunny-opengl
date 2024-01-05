@@ -854,7 +854,6 @@ void gameOver() {
     rotationSpeed = 0;
     bunnyHorizontalSpeed = 0;
     faint = true;
-    score = 0;
 }
 
 void update() {
