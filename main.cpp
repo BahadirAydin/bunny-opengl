@@ -1099,7 +1099,7 @@ void display() {
     renderCheckpoint();
     score += speed * 10;
     std::string scoreStr = std::to_string(score);
-    if (score == 0) {
+    if (faint) {
         renderText("Score:" + scoreStr, 25.0f, 750.0f, 1.0f,
                    glm::vec3(1.0f, 0.0f, 0.0f));
     } else {
