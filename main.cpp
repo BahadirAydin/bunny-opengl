@@ -1,20 +1,21 @@
-#include <cstdio>
+#include <GL/glew.h>    // The GL Header File
+#include <GL/gl.h>      // The GL Header File
+#include <GLFW/glfw3.h> // The GLFW header
 #include <cassert>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <string>
-#include <map> 
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <GL/glew.h>   // The GL Header File
-#include <GL/gl.h>   // The GL Header File
-#include <GLFW/glfw3.h> // The GLFW header
+#include <ft2build.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <ft2build.h>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include FT_FREETYPE_H
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -314,7 +315,7 @@ void initShaders() {
     glAttachShader(gProgram[3], vs4);
     glAttachShader(gProgram[3], fs4);
 
-    glBindAttribLocation(gProgram[3], 0, "vertex");  // ????
+    glBindAttribLocation(gProgram[3], 0, "vertex"); // ????
 
     // Link the programs
 
@@ -434,51 +435,42 @@ void initVBO() {
                           BUFFER_OFFSET(gVertexDataSizeInBytes));
 }
 
-void initFonts(int windowWidth, int windowHeight)
-{
+void initFonts(int windowWidth, int windowHeight) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glm::mat4 projection = glm::ortho(0.0f, 1000.0f, 0.0f, 800.0f);
     glUseProgram(gProgram[3]);
-    glUniformMatrix4fv(glGetUniformLocation(gProgram[3], "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(gProgram[3], "projection"), 1,
+                       GL_FALSE, glm::value_ptr(projection));
 
     FT_Library ft;
-    if (FT_Init_FreeType(&ft))
-    {
-        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+    if (FT_Init_FreeType(&ft)) {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library"
+                  << std::endl;
     }
 
     FT_Face face;
-    if (FT_New_Face(ft, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 0, &face))
-    {
+    if (FT_New_Face(ft,
+                    "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 0,
+                    &face)) {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
     }
     FT_Set_Pixel_Sizes(face, 0, 48);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    for (GLubyte c = 0; c < 128; c++)
-    {
-        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-        {
+    for (GLubyte c = 0; c < 128; c++) {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
             std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
             continue;
         }
         GLuint texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-                );
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width,
+                     face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
+                     face->glyph->bitmap.buffer);
         // Set texture options
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -489,8 +481,7 @@ void initFonts(int windowWidth, int windowHeight)
             texture,
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            face->glyph->advance.x
-        };
+            face->glyph->advance.x};
         Characters.insert(std::pair<GLchar, Character>(c, character));
     }
 
@@ -506,7 +497,7 @@ void initFonts(int windowWidth, int windowHeight)
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // glBindVertexArray(0);      
+    // glBindVertexArray(0);
 }
 
 GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
@@ -813,13 +804,24 @@ void moveBunny(bool left) {
     }
 }
 
+void gameOver() {
+    speed = 0;
+    rotationSpeed = 0;
+    bunnyHorizontalSpeed = 0;
+    faint = true;
+    score = 0;
+}
+
 void update() {
+    if (faint) {
+        return;
+    }
     if (increase) {
         bunnyPos += bunnyJumpDir;
         if (bunnyPos.y >= bunnyMaxHeight) {
             increase = false;
         }
-    } else {
+    } else{
         bunnyPos -= bunnyJumpDir;
         if (bunnyPos.y <= -5) {
             increase = true;
@@ -827,6 +829,7 @@ void update() {
     }
     bunnyPos += bunnyZDir * speed;
     eyePos = glm::vec3(0, 2, bunnyPos.z + 10);
+    viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, -5, bunnyPos.z - 5),
                                 glm::vec3(0, 1, 0));
     for (int i = 0; i < 3; i++) {
         if (i != goodCheckpointIndex &&
@@ -849,7 +852,6 @@ void update() {
     }
 }
 
-
 void renderBunny() {
     activeProgramIndex = 0;
     update();
@@ -862,14 +864,19 @@ void renderBunny() {
                                          glm::vec3(1.0, 0.0, 0.0));
     modelingMatrix = matT * matS * matR2 * matR;
     if (bunnyHappyState) {
-        modelingMatrix = modelingMatrix * glm::rotate<float>(
-                                              glm::mat4(1.0), angle,
-                                              glm::vec3(0.0, 1.0, 0.0));
+        modelingMatrix =
+            modelingMatrix *
+            glm::rotate<float>(glm::mat4(1.0), angle, glm::vec3(0.0, 1.0, 0.0));
         angle += rotationSpeed;
         if (angle >= 2 * M_PI) {
             bunnyHappyState = false;
             angle = 0;
         }
+    }
+    if (faint) {
+        modelingMatrix =
+            modelingMatrix *
+            glm::rotate<float>(glm::mat4(1.0), M_PI/2, glm::vec3(1.0, 0.0, 0.0));
     }
 
     glUseProgram(gProgram[activeProgramIndex]);
@@ -954,18 +961,18 @@ void renderBoard() {
     glDrawElements(GL_TRIANGLES, gFacesBoard.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
-void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
-{
+void renderText(const std::string &text, GLfloat x, GLfloat y, GLfloat scale,
+                glm::vec3 color) {
     activeProgramIndex = 3;
     glUseProgram(gProgram[activeProgramIndex]);
-    glUniform3f(glGetUniformLocation(gProgram[activeProgramIndex], "textColor"), color.x, color.y, color.z);
+    glUniform3f(glGetUniformLocation(gProgram[activeProgramIndex], "textColor"),
+                color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
     // glBindVertexArray(VAO);
 
     // iterate through all characters
     std::string::const_iterator c;
-    for (c = text.begin(); c != text.end(); c++)
-    {
+    for (c = text.begin(); c != text.end(); c++) {
         Character ch = Characters[*c];
 
         float xpos = x + ch.Bearing.x * scale;
@@ -975,32 +982,29 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
         float h = ch.Size.y * scale;
         // update VBO for each character
         float vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 0.0f },            
-            { xpos,     ypos,       0.0f, 1.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
+            {xpos, ypos + h, 0.0f, 0.0f},    {xpos, ypos, 0.0f, 1.0f},
+            {xpos + w, ypos, 1.0f, 1.0f},
 
-            { xpos,     ypos + h,   0.0f, 0.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
-            { xpos + w, ypos + h,   1.0f, 0.0f }           
-        };
+            {xpos, ypos + h, 0.0f, 0.0f},    {xpos + w, ypos, 1.0f, 1.0f},
+            {xpos + w, ypos + h, 1.0f, 0.0f}};
         // render glyph texture over quad
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
         // update content of VBO memory
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         // glBindBuffer(GL_ARRAY_BUFFER, 0);
         // render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+        // now advance cursors for next glyph (note that advance is number of
+        // 1/64 pixels)
+        x += (ch.Advance >> 6) *
+             scale; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
     // glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void resetGame() {
-    bunnyPos = bunnyStart;
-    pos = glm::vec3(0, -5, -10);
     bunnyPos = glm::vec3(0, -5, -8);
     pos = glm::vec3(0, -5, -8);
     goodCheckpointIndex = rand() % 3;
@@ -1018,25 +1022,24 @@ void display() {
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    for (int i = 0; i < 3; i++) {
-        if (i != goodCheckpointIndex &&
-            isCollided(bunnyPos, checkpointPos + checkpoint_dirs[i])) {
-            resetGame();
-            break;
-        }
-    }
 
-    speed += acceleration;
-    rotationSpeed += angleAcceleration;
+    if (!faint) {
+        speed += acceleration;
+        rotationSpeed += angleAcceleration;
+        bunnyHorizontalSpeed += horizontalAcceleration;
+        bunnyHorizontalSpeed = min(bunnyHorizontalSpeed, 6.0f);
+    }
 
     renderBoard();
     renderBunny();
     renderCheckpoint();
     std::string scoreStr = std::to_string(score);
-    if(score == 0){
-        renderText( "Score:" + scoreStr, 25.0f, 750.0f, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-    } else{
-        renderText( "Score:" + scoreStr, 25.0f, 750.0f, 1.0f, glm::vec3(0.929, 0.913f, 0.0f));
+    if (score == 0) {
+        renderText("Score:" + scoreStr, 25.0f, 750.0f, 1.0f,
+                   glm::vec3(1.0f, 0.0f, 0.0f));
+    } else {
+        renderText("Score:" + scoreStr, 25.0f, 750.0f, 1.0f,
+                   glm::vec3(0.929, 0.913f, 0.0f));
     }
 }
 
@@ -1070,6 +1073,8 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
         moveBunny(true);
     } else if (key == GLFW_KEY_D && action == GLFW_PRESS) {
         moveBunny(false);
+    } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        resetGame();
     }
 }
 
