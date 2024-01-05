@@ -12,11 +12,6 @@ out vec3 fragWorldNor;
 
 void main(void)
 {
-	// Compute the world coordinates of the vertex and its normal.
-	// These coordinates will be interpolated during the rasterization
-	// stage and the fragment shader will receive the interpolated
-	// coordinates.
-
 	fragWorldPos = modelingMatrix * vec4(inVertex, 1);
 	fragWorldNor = inverse(transpose(mat3x3(modelingMatrix))) * inNormal;
 
