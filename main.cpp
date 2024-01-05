@@ -758,21 +758,24 @@ void init() {
     initFonts(1000, 800);
 }
 
-glm::vec3 bunnyStart(0, -5, -10);
-glm::vec3 pos(0, -5, -10);
-glm::vec3 checkpointPos(0, -2, -80);
+glm::vec3 pos(0, -5, -8);
+glm::vec3 checkpointPos(0, -2, -100);
 
 glm::vec3 bunnyPos(0, -5, -8);
 float speed = 0.1;
 float acceleration = 0.001;
+float horizontalAcceleration = 0.0008;
 float angleAcceleration = 0.0001;
 glm::vec3 bunnyJumpDir(0, 0.2, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
-float bunnyMaxHeight = -2.2;
+float bunnyMaxHeight = -2.0;
 bool bunnyHappyState = false;
+bool faint = false;
 bool increase = true;
 vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
                                      glm::vec3(6, 0, 0)};
+float angle = 0;
+float rotationSpeed = 0.1;
 
 int goodCheckpointIndex = 0;
 
@@ -794,18 +797,19 @@ bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
     return false;
 }
 
-const float BUNNY_MOVE_STEP = 1.5;
+const float LIMIT = 8;
+float bunnyHorizontalSpeed = 1.5;
 void moveBunny(bool left) {
     if (left) {
-        bunnyPos.x -= BUNNY_MOVE_STEP;
+        bunnyPos.x -= bunnyHorizontalSpeed;
     } else {
-        bunnyPos.x += BUNNY_MOVE_STEP;
+        bunnyPos.x += bunnyHorizontalSpeed;
     }
-    if (bunnyPos.x > 6.5) {
-        bunnyPos.x = 6.5;
+    if (bunnyPos.x > LIMIT) {
+        bunnyPos.x = LIMIT;
     }
-    if (bunnyPos.x < -6.5) {
-        bunnyPos.x = -6.5;
+    if (bunnyPos.x < -LIMIT) {
+        bunnyPos.x = -LIMIT;
     }
 }
 
@@ -823,24 +827,28 @@ void update() {
     }
     bunnyPos += bunnyZDir * speed;
     eyePos = glm::vec3(0, 2, bunnyPos.z + 10);
-    viewingMatrix = glm::lookAt(eyePos, glm::vec3(0, -5, bunnyPos.z - 10),
                                 glm::vec3(0, 1, 0));
-    if (eyePos.z <= checkpointPos.z )
-        {
-        checkpointPos.z = eyePos.z - 80;
+    for (int i = 0; i < 3; i++) {
+        if (i != goodCheckpointIndex &&
+            isCollided(bunnyPos, checkpointPos + checkpoint_dirs[i])) {
+            gameOver();
+            checkpointPos.z = eyePos.z - 500;
+            break;
+        }
+    }
+    if (eyePos.z <= checkpointPos.z) {
+        checkpointPos.z = eyePos.z - 100;
         goodCheckpointIndex = rand() % 3;
     }
-    if (  isCollided(bunnyPos,
-                   checkpointPos + checkpoint_dirs[goodCheckpointIndex])){
-        checkpointPos.z = eyePos.z - 80;
+    if (isCollided(bunnyPos,
+                   checkpointPos + checkpoint_dirs[goodCheckpointIndex])) {
+        checkpointPos.z = eyePos.z - 100;
         goodCheckpointIndex = rand() % 3;
         score += 1000;
         bunnyHappyState = true;
     }
 }
 
-float angle = 0;
-float rotationSpeed = 0.1;
 
 void renderBunny() {
     activeProgramIndex = 0;
@@ -920,10 +928,8 @@ void renderCheckpoint() {
     }
 }
 
-glm::vec3 boardDir(0, 0, -10);
 void renderBoard() {
     activeProgramIndex = 1;
-    pos += boardDir;
     glm::mat4 matT = glm::translate(glm::mat4(1.0), pos);
     glm::mat4 matS = glm::scale(glm::mat4(1), glm::vec3(10, 10, 100000));
     glm::mat4 matR = glm::rotate<float>(glm::mat4(1.0), (-90. / 180.) * M_PI,
@@ -995,13 +1001,16 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
 void resetGame() {
     bunnyPos = bunnyStart;
     pos = glm::vec3(0, -5, -10);
+    bunnyPos = glm::vec3(0, -5, -8);
+    pos = glm::vec3(0, -5, -8);
     goodCheckpointIndex = rand() % 3;
     checkpointPos = glm::vec3(0, -2, -80);
     speed = 0.08;
     rotationSpeed = 0.1;
-    acceleration = 0.0005;
+    bunnyHorizontalSpeed = 1.5;
     score = 0;
     bunnyHappyState = false;
+    faint = false;
 }
 
 void display() {
