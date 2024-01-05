@@ -1070,7 +1070,6 @@ void display() {
         speed += acceleration;
         rotationSpeed += angleAcceleration;
         bunnyHorizontalSpeed += horizontalAcceleration;
-        bunnyHorizontalSpeed = min(bunnyHorizontalSpeed, 6.0f);
     }
 
     renderBoard();
