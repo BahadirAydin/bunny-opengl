@@ -82,6 +82,20 @@ vector<Texture> gTextures;
 vector<Normal> gNormals;
 vector<Face> gFaces;
 
+GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
+vector<Vertex> gVerticesBoard;
+vector<Normal> gNormalsBoard;
+vector<Face> gFacesBoard;
+vector<Texture> gTexturesBoard;
+
+GLuint gVertexAttribBufferCheckpoint, gIndexBufferCheckpoint;
+vector<Vertex> gVerticesCheckpoint;
+vector<Normal> gNormalsCheckpoint;
+vector<Face> gFacesCheckpoint;
+vector<Texture> gTexturesCheckpoint;
+
+
+
 GLuint gVertexAttribBuffer, gIndexBuffer;
 GLint gInVertexLoc, gInNormalLoc;
 int gVertexDataSizeInBytes, gNormalDataSizeInBytes;
@@ -164,50 +178,173 @@ bool ParseObj(const string &fileName) {
     } else {
         return false;
     }
-
-    /*
-    for (int i = 0; i < gVertices.size(); ++i)
-    {
-            Vector3 n;
-
-            for (int j = 0; j < gFaces.size(); ++j)
-            {
-                    for (int k = 0; k < 3; ++k)
-                    {
-                            if (gFaces[j].vIndex[k] == i)
-                            {
-                                    // face j contains vertex i
-                                    Vector3 a(gVertices[gFaces[j].vIndex[0]].x,
-                                                      gVertices[gFaces[j].vIndex[0]].y,
-                                                      gVertices[gFaces[j].vIndex[0]].z);
-
-                                    Vector3 b(gVertices[gFaces[j].vIndex[1]].x,
-                                                      gVertices[gFaces[j].vIndex[1]].y,
-                                                      gVertices[gFaces[j].vIndex[1]].z);
-
-                                    Vector3 c(gVertices[gFaces[j].vIndex[2]].x,
-                                                      gVertices[gFaces[j].vIndex[2]].y,
-                                                      gVertices[gFaces[j].vIndex[2]].z);
-
-                                    Vector3 ab = b - a;
-                                    Vector3 ac = c - a;
-                                    Vector3 normalFromThisFace =
-    (ab.cross(ac)).getNormalized(); n += normalFromThisFace;
-                            }
-
-                    }
-            }
-
-            n.normalize();
-
-            gNormals.push_back(Normal(n.x, n.y, n.z));
-    }
-    */
-
     assert(gVertices.size() == gNormals.size());
 
     return true;
 }
+
+bool ParseObjBoard(const string &fileName) {
+    fstream myfile;
+
+    // Open the input
+    myfile.open(fileName.c_str(), std::ios::in);
+
+    if (myfile.is_open()) {
+        string curLine;
+
+        while (getline(myfile, curLine)) {
+            stringstream str(curLine);
+            GLfloat c1, c2, c3;
+            GLuint index[9];
+            string tmp;
+
+            if (curLine.length() >= 2) {
+                if (curLine[0] == 'v') {
+                    if (curLine[1] == 't') // texture
+                    {
+                        str >> tmp; // consume "vt"
+                        str >> c1 >> c2;
+                        gTexturesBoard.push_back(Texture(c1, c2));
+                    } else if (curLine[1] == 'n') // normal
+                    {
+                        str >> tmp; // consume "vn"
+                        str >> c1 >> c2 >> c3;
+                        gNormalsBoard.push_back(Normal(c1, c2, c3));
+                    } else // vertex
+                    {
+                        str >> tmp; // consume "v"
+                        str >> c1 >> c2 >> c3;
+                        gVerticesBoard.push_back(Vertex(c1, c2, c3));
+                    }
+                } else if (curLine[0] == 'f') // face
+                {
+                    str >> tmp; // consume "f"
+                    char c;
+                    int vIndex[3], nIndex[3], tIndex[3];
+                    str >> vIndex[0];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[0];
+                    str >> vIndex[1];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[1];
+                    str >> vIndex[2];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[2];
+
+                    assert(vIndex[0] == nIndex[0] && vIndex[1] == nIndex[1] &&
+                           vIndex[2] == nIndex[2]); // a limitation for now
+
+                    // make indices start from 0
+                    for (int c = 0; c < 3; ++c) {
+                        vIndex[c] -= 1;
+                        nIndex[c] -= 1;
+                        tIndex[c] -= 1;
+                    }
+
+                    gFacesBoard.push_back(Face(vIndex, tIndex, nIndex));
+                } else {
+                    cout << "Ignoring unidentified line in obj file: "
+                         << curLine << endl;
+                }
+            }
+
+            // data += curLine;
+            if (!myfile.eof()) {
+                // data += "\n";
+            }
+        }
+
+        myfile.close();
+    } else {
+        return false;
+    }
+    assert(gVerticesBoard.size() == gNormalsBoard.size());
+
+    return true;
+}
+
+bool ParseObjCheckpoint(const string &fileName) {
+    fstream myfile;
+
+    // Open the input
+    myfile.open(fileName.c_str(), std::ios::in);
+
+    if (myfile.is_open()) {
+        string curLine;
+
+        while (getline(myfile, curLine)) {
+            stringstream str(curLine);
+            GLfloat c1, c2, c3;
+            GLuint index[9];
+            string tmp;
+
+            if (curLine.length() >= 2) {
+                if (curLine[0] == 'v') {
+                    if (curLine[1] == 't') // texture
+                    {
+                        str >> tmp; // consume "vt"
+                        str >> c1 >> c2;
+                        gTexturesCheckpoint.push_back(Texture(c1, c2));
+                    } else if (curLine[1] == 'n') // normal
+                    {
+                        str >> tmp; // consume "vn"
+                        str >> c1 >> c2 >> c3;
+                        gNormalsCheckpoint.push_back(Normal(c1, c2, c3));
+                    } else // vertex
+                    {
+                        str >> tmp; // consume "v"
+                        str >> c1 >> c2 >> c3;
+                        gVerticesCheckpoint.push_back(Vertex(c1, c2, c3));
+                    }
+                } else if (curLine[0] == 'f') // face
+                {
+                    str >> tmp; // consume "f"
+                    char c;
+                    int vIndex[3], nIndex[3], tIndex[3];
+                    str >> vIndex[0];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[0];
+                    str >> vIndex[1];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[1];
+                    str >> vIndex[2];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[2];
+
+                    assert(vIndex[0] == nIndex[0] && vIndex[1] == nIndex[1] &&
+                           vIndex[2] == nIndex[2]); // a limitation for now
+
+                    // make indices start from 0
+                    for (int c = 0; c < 3; ++c) {
+                        vIndex[c] -= 1;
+                        nIndex[c] -= 1;
+                        tIndex[c] -= 1;
+                    }
+
+                    gFacesCheckpoint.push_back(Face(vIndex, tIndex, nIndex));
+                } else {
+                    cout << "Ignoring unidentified line in obj file: "
+                         << curLine << endl;
+                }
+            }
+
+            // data += curLine;
+            if (!myfile.eof()) {
+                // data += "\n";
+            }
+        }
+
+        myfile.close();
+    } else {
+        return false;
+    }
+    assert(gVerticesCheckpoint.size() == gNormalsCheckpoint.size());
+
+    return true;
+}
+
+
+
 
 bool ReadDataFromFile(const string &fileName, ///< [in]  Name of the shader file
                       string &data) ///< [out] The contents of the file
@@ -499,35 +636,6 @@ void initFonts(int windowWidth, int windowHeight) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // glBindVertexArray(0);
 }
-
-GLuint gVertexAttribBufferBoard, gIndexBufferBoard;
-vector<Vertex> gVerticesBoard;
-vector<Normal> gNormalsBoard;
-vector<Face> gFacesBoard;
-vector<Texture> gTexturesBoard;
-
-void create_board() {
-    gVerticesBoard.push_back(Vertex(-1.0f, -1.0f, 0.0f));
-    gVerticesBoard.push_back(Vertex(1.0f, -1.0f, 0.0f));
-    gVerticesBoard.push_back(Vertex(1.0f, 1.0f, 0.0f));
-    gVerticesBoard.push_back(Vertex(-1.0f, 1.0f, 0.0f));
-
-    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
-    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
-    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
-    gNormalsBoard.push_back(Normal(0.0f, 0.0f, 1.0f));
-
-    gTexturesBoard.push_back(Texture(0.0f, 0.0f));
-    gTexturesBoard.push_back(Texture(1.0f, 0.0f));
-    gTexturesBoard.push_back(Texture(1.0f, 1.0f));
-    gTexturesBoard.push_back(Texture(0.0f, 1.0f));
-
-    gFacesBoard.push_back(
-        Face(new int[3]{0, 1, 2}, new int[3]{0, 1, 2}, new int[3]{0, 1, 2}));
-    gFacesBoard.push_back(
-        Face(new int[3]{0, 2, 3}, new int[3]{0, 2, 3}, new int[3]{0, 2, 3}));
-}
-
 void initVBOBoard() {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -545,7 +653,6 @@ void initVBOBoard() {
 
     glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferBoard);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferBoard);
-    create_board();
 
     gVertexDataSizeInBytesBoard = gVerticesBoard.size() * 3 * sizeof(GLfloat);
     gNormalDataSizeInBytesBoard = gNormalsBoard.size() * 3 * sizeof(GLfloat);
@@ -599,69 +706,6 @@ void initVBOBoard() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0,
                           BUFFER_OFFSET(gVertexDataSizeInBytes));
 }
-
-GLuint gVertexAttribBufferCheckpoint, gIndexBufferCheckpoint;
-vector<Vertex> gVerticesCheckpoint;
-vector<Normal> gNormalsCheckpoint;
-vector<Face> gFacesCheckpoint;
-vector<Texture> gTexturesCheckpoint;
-
-void create_checkpoint() {
-    // Vertices of the 3D rectangular object
-    gVerticesCheckpoint.push_back(Vertex(-0.5f, -0.5f, -0.5f)); // Vertex 0
-    gVerticesCheckpoint.push_back(Vertex(0.5f, -0.5f, -0.5f));  // Vertex 1
-    gVerticesCheckpoint.push_back(Vertex(0.5f, 0.5f, -0.5f));   // Vertex 2
-    gVerticesCheckpoint.push_back(Vertex(-0.5f, 0.5f, -0.5f));  // Vertex 3
-    gVerticesCheckpoint.push_back(Vertex(-0.5f, -0.5f, 0.5f));  // Vertex 4
-    gVerticesCheckpoint.push_back(Vertex(0.5f, -0.5f, 0.5f));   // Vertex 5
-    gVerticesCheckpoint.push_back(Vertex(0.5f, 0.5f, 0.5f));    // Vertex 6
-    gVerticesCheckpoint.push_back(Vertex(-0.5f, 0.5f, 0.5f));   // Vertex 7
-
-    // Normals for each face of the rectangular object
-    gNormalsCheckpoint.push_back(Normal(0.0f, 0.0f, -1.0f)); // Face 0 (front)
-    gNormalsCheckpoint.push_back(Normal(0.0f, 0.0f, 1.0f));  // Face 1 (back)
-    gNormalsCheckpoint.push_back(Normal(0.0f, -1.0f, 0.0f)); // Face 2 (bottom)
-    gNormalsCheckpoint.push_back(Normal(0.0f, 1.0f, 0.0f));  // Face 3 (top)
-    gNormalsCheckpoint.push_back(Normal(-1.0f, 0.0f, 0.0f)); // Face 4 (left)
-    gNormalsCheckpoint.push_back(Normal(1.0f, 0.0f, 0.0f));  // Face 5 (right)
-
-    // Texture coordinates for each vertex of the rectangular object
-    gTexturesCheckpoint.push_back(Texture(0.0f, 0.0f));
-    gTexturesCheckpoint.push_back(Texture(1.0f, 0.0f));
-    gTexturesCheckpoint.push_back(Texture(1.0f, 1.0f));
-    gTexturesCheckpoint.push_back(Texture(0.0f, 1.0f));
-    gTexturesCheckpoint.push_back(Texture(0.0f, 0.0f));
-    gTexturesCheckpoint.push_back(Texture(1.0f, 0.0f));
-    gTexturesCheckpoint.push_back(Texture(1.0f, 1.0f));
-    gTexturesCheckpoint.push_back(Texture(0.0f, 1.0f));
-
-    // Faces of the rectangular object
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 1, 2}, new int[3]{0, 1, 2}, new int[3]{0, 1, 2}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 2, 3}, new int[3]{0, 2, 3}, new int[3]{0, 2, 3}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{4, 5, 6}, new int[3]{4, 5, 6}, new int[3]{4, 5, 6}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{4, 6, 7}, new int[3]{4, 6, 7}, new int[3]{4, 6, 7}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 4, 7}, new int[3]{0, 4, 7}, new int[3]{0, 4, 7}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 7, 3}, new int[3]{0, 7, 3}, new int[3]{0, 7, 3}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{1, 5, 6}, new int[3]{1, 5, 6}, new int[3]{1, 5, 6}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{1, 6, 2}, new int[3]{1, 6, 2}, new int[3]{1, 6, 2}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{3, 2, 6}, new int[3]{3, 2, 6}, new int[3]{3, 2, 6}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{3, 6, 7}, new int[3]{3, 6, 7}, new int[3]{3, 6, 7}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 1, 5}, new int[3]{0, 1, 5}, new int[3]{0, 1, 5}));
-    gFacesCheckpoint.push_back(
-        Face(new int[3]{0, 5, 4}, new int[3]{0, 5, 4}, new int[3]{0, 5, 4}));
-}
-
 void initVBOCheckpoint() {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -679,7 +723,6 @@ void initVBOCheckpoint() {
 
     glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBufferCheckpoint);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferCheckpoint);
-    create_checkpoint();
 
     gVertexDataSizeinBytesCheckpoint =
         gVerticesCheckpoint.size() * 3 * sizeof(GLfloat);
@@ -739,7 +782,9 @@ void initVBOCheckpoint() {
 
 void init() {
     ParseObj("bunny.obj");
-    // ParseObj("bunny.obj");
+    ParseObjBoard("quad.obj");
+    ParseObjCheckpoint("cube.obj");
+    
 
     glEnable(GL_DEPTH_TEST);
     initVBO();
@@ -750,7 +795,7 @@ void init() {
 }
 
 glm::vec3 pos(0, -5, -8);
-glm::vec3 checkpointPos(0, -2, -100);
+glm::vec3 checkpointPos(0, -3, -105);
 
 glm::vec3 bunnyPos(0, -5, -8);
 float speed = 0.1;
@@ -763,8 +808,8 @@ float bunnyMaxHeight = -2.0;
 bool bunnyHappyState = false;
 bool faint = false;
 bool increase = true;
-vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-6, 0, 0),
-                                     glm::vec3(6, 0, 0)};
+vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-8.5, 0, 0),
+                                     glm::vec3(8.5, 0, 0)};
 float angle = 0;
 float rotationSpeed = 0.1;
 
@@ -835,17 +880,16 @@ void update() {
         if (i != goodCheckpointIndex &&
             isCollided(bunnyPos, checkpointPos + checkpoint_dirs[i])) {
             gameOver();
-            checkpointPos.z = eyePos.z - 500;
             break;
         }
     }
     if (eyePos.z <= checkpointPos.z) {
-        checkpointPos.z = eyePos.z - 100;
+        checkpointPos.z = eyePos.z - 105;
         goodCheckpointIndex = rand() % 3;
     }
     if (isCollided(bunnyPos,
                    checkpointPos + checkpoint_dirs[goodCheckpointIndex])) {
-        checkpointPos.z = eyePos.z - 100;
+        checkpointPos.z = eyePos.z - 105;
         goodCheckpointIndex = rand() % 3;
         score += 1000;
         bunnyHappyState = true;
@@ -904,7 +948,7 @@ void renderCheckpoint() {
     for (int i = 0; i < 3; i++) {
         glm::mat4 matT =
             glm::translate(glm::mat4(1.0), checkpointPos + checkpoint_dirs[i]);
-        glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1, 4, 0.8));
+        glm::mat4 matS = glm::scale(glm::mat4(1.0), glm::vec3(1, 2.5, 1));
         modelingMatrix = matT * matS;
 
         glm::vec3 checkpointColor;
