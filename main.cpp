@@ -1053,6 +1053,8 @@ void renderText(const std::string &text, GLfloat x, GLfloat y, GLfloat scale,
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+bool reset = false;
+
 void resetGame() {
     bunnyPos = glm::vec3(0, -5, -8);
     pos = glm::vec3(0, -5, -8);
@@ -1060,7 +1062,7 @@ void resetGame() {
     checkpointPos = glm::vec3(0, -2, -80);
     speed = 0.08;
     rotationSpeed = 0.1;
-    bunnyHorizontalSpeed = 1.5;
+    bunnyHorizontalSpeed = 0.15;
     score = 0;
     bunnyHappyState = false;
     faint = false;
@@ -1071,12 +1073,15 @@ void display() {
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+    if (reset) {
+        resetGame();
+    }
     if (!faint) {
         speed += acceleration;
         rotationSpeed += angleAcceleration;
         bunnyHorizontalSpeed += horizontalAcceleration;
     }
+
 
     renderBoard();
     renderBunny();
@@ -1122,12 +1127,14 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
         bunnyMove = -1;
     } else if (key == GLFW_KEY_D && action == GLFW_PRESS ) {
         bunnyMove = 1;
-    } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-        resetGame();
-    } else if (key == GLFW_KEY_A && action == GLFW_RELEASE) {
+    }  else if (key == GLFW_KEY_A && action == GLFW_RELEASE) {
         bunnyMove = 0;
     } else if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
         bunnyMove = 0;
+    } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        reset = true;
+    } else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
+        reset = false;
     }
 }
 
