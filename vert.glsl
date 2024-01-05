@@ -8,7 +8,7 @@
 
 vec3 I = vec3(1, 1, 1);          // point light intensity
 vec3 Iamb = vec3(0.8, 0.8, 0.8); // ambient light intensity
-vec3 kd = vec3(1, 0.2, 0.2);     // diffuse reflectance coefficient
+vec3 kd = vec3(1, 0.8, 0.2);     // diffuse reflectance coefficient
 vec3 ka = vec3(0.3, 0.3, 0.3);   // ambient reflectance coefficient
 vec3 ks = vec3(0.8, 0.8, 0.8);   // specular reflectance coefficient
 vec3 lightPos = vec3(5, 5, 5);   // light position in world coordinates
@@ -55,7 +55,8 @@ void main(void)
 	// Front color specifies the color of a vertex for a front facing
 	// primitive.
 
-	color = vec4(diffuseColor + specularColor + ambientColor, 1);
+	color = vec4(diffuseColor + specularColor , 1);
+	color = vec4(diffuseColor + specularColor + ambientColor , 1);
 
 	// Transform the vertex with the product of the projection, viewing, and
 	// modeling matrices.
