@@ -835,22 +835,27 @@ bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
 
 const float LIMIT = 8;
 float bunnyHorizontalSpeed = 0.15;
-int bunnyMove = 0;
-void moveBunny(int x) {
-    if (x == 0) {
-        return;
-    } 
-    if (x ==  -1) {
-        bunnyPos.x -= bunnyHorizontalSpeed;
-    } else if (x == 1){
-        bunnyPos.x += bunnyHorizontalSpeed;
-    }
+
+
+bool moveLeftState = false;
+void moveLeft() {
+    bunnyPos.x -= bunnyHorizontalSpeed;
     if (bunnyPos.x > LIMIT) {
         bunnyPos.x = LIMIT;
-    }
+    } 
     if (bunnyPos.x < -LIMIT) {
         bunnyPos.x = -LIMIT;
-    }
+    } 
+}
+bool moveRightState = false;
+void moveRight() {
+    bunnyPos.x += bunnyHorizontalSpeed;
+    if (bunnyPos.x > LIMIT) {
+        bunnyPos.x = LIMIT;
+    } 
+    if (bunnyPos.x < -LIMIT) {
+        bunnyPos.x = -LIMIT;
+    } 
 }
 
 void gameOver() {
@@ -858,14 +863,20 @@ void gameOver() {
     rotationSpeed = 0;
     bunnyHorizontalSpeed = 0;
     faint = true;
-    bunnyMove = 0;
+    moveLeftState = false;
+    moveRightState = false;
 }
 
 void update() {
     if (faint) {
         return;
     }
-    moveBunny(bunnyMove);
+    if (moveLeftState) {
+        moveLeft();
+    }
+    if (moveRightState) {
+        moveRight();
+    }
     if (increase) {
         bunnyPos += bunnyJumpDir;
         if (bunnyPos.y >= bunnyMaxHeight) {
@@ -1124,13 +1135,13 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        bunnyMove = -1;
+        moveLeftState = true;
     } else if (key == GLFW_KEY_D && action == GLFW_PRESS ) {
-        bunnyMove = 1;
+        moveRightState = true;
     }  else if (key == GLFW_KEY_A && action == GLFW_RELEASE) {
-        bunnyMove = 0;
+        moveLeftState = false;
     } else if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
-        bunnyMove = 0;
+        moveRightState = false;
     } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         reset = true;
     } else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
