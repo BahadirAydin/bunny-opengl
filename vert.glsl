@@ -56,7 +56,7 @@ void main(void)
 	// primitive.
 
 	color = vec4(diffuseColor + specularColor , 1);
-	color = vec4(diffuseColor + specularColor + ambientColor , 1);
+	// color = vec4(diffuseColor + specularColor + ambientColor , 1);
 
 	// Transform the vertex with the product of the projection, viewing, and
 	// modeling matrices.
