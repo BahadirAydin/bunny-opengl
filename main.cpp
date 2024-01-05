@@ -800,7 +800,7 @@ glm::vec3 checkpointPos(0, -3, -105);
 glm::vec3 bunnyPos(0, -5, -8);
 float speed = 0.1;
 float acceleration = 0.001;
-float horizontalAcceleration = 0.0008;
+float horizontalAcceleration = 0.0005;
 float angleAcceleration = 0.0001;
 glm::vec3 bunnyJumpDir(0, 0.25, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
@@ -834,11 +834,15 @@ bool isCollided(const glm::vec3 &bunnyPos, const glm::vec3 &checkpointPos) {
 }
 
 const float LIMIT = 8;
-float bunnyHorizontalSpeed = 1.5;
-void moveBunny(bool left) {
-    if (left) {
+float bunnyHorizontalSpeed = 0.15;
+int bunnyMove = 0;
+void moveBunny(int x) {
+    if (x == 0) {
+        return;
+    } 
+    if (x ==  -1) {
         bunnyPos.x -= bunnyHorizontalSpeed;
-    } else {
+    } else if (x == 1){
         bunnyPos.x += bunnyHorizontalSpeed;
     }
     if (bunnyPos.x > LIMIT) {
@@ -854,12 +858,14 @@ void gameOver() {
     rotationSpeed = 0;
     bunnyHorizontalSpeed = 0;
     faint = true;
+    bunnyMove = 0;
 }
 
 void update() {
     if (faint) {
         return;
     }
+    moveBunny(bunnyMove);
     if (increase) {
         bunnyPos += bunnyJumpDir;
         if (bunnyPos.y >= bunnyMaxHeight) {
@@ -1112,12 +1118,16 @@ void reshape(GLFWwindow *window, int w, int h) {
 void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    } else if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        moveBunny(true);
-    } else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        moveBunny(false);
+    } else if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        bunnyMove = -1;
+    } else if (key == GLFW_KEY_D && action == GLFW_PRESS ) {
+        bunnyMove = 1;
     } else if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         resetGame();
+    } else if (key == GLFW_KEY_A && action == GLFW_RELEASE) {
+        bunnyMove = 0;
+    } else if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+        bunnyMove = 0;
     }
 }
 
