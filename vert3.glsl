@@ -47,8 +47,8 @@ void main(void)
     vec3 specularColor = I * ks * pow(max(0, NdotH), 100);
     vec3 ambientColor = Iamb * ka;
 
-    color = vec4(diffuseColor + specularColor , 1);
-    // color = vec4(diffuseColor + specularColor + ambientColor , 1);
+    // color = vec4(diffuseColor + specularColor , 1);
+    color = vec4(diffuseColor + specularColor + ambientColor , 1);
 
     gl_Position = projectionMatrix * viewingMatrix * modelingMatrix * vec4(inVertex, 1);
 }
