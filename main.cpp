@@ -798,13 +798,13 @@ glm::vec3 pos(0, -5, -8);
 glm::vec3 checkpointPos(0, -3, -105);
 
 glm::vec3 bunnyPos(0, -5, -8);
-float speed = 0.1;
-float acceleration = 0.001;
-float horizontalAcceleration = 0.0005;
+float speed = 0.09;
+float acceleration = 0.0005;
+float horizontalAcceleration = 0.0001;
 float angleAcceleration = 0.0001;
 glm::vec3 bunnyJumpDir(0, 0.25, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
-float bunnyMaxHeight = -2.0;
+float bunnyMaxHeight = -2.5;
 bool bunnyHappyState = false;
 bool faint = false;
 bool increase = true;
