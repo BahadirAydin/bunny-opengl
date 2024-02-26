@@ -798,10 +798,10 @@ glm::vec3 pos(0, -5, -8);
 glm::vec3 checkpointPos(0, -3, -105);
 
 glm::vec3 bunnyPos(0, -5, -8);
-float speed = 0.09;
-float acceleration = 0.0005;
-float horizontalAcceleration = 0.0001;
-float angleAcceleration = 0.0001;
+float speed = 0.4;
+float acceleration = 0.00022;
+float horizontalAcceleration = 0.00005;
+float angleAcceleration = 0.00004;
 glm::vec3 bunnyJumpDir(0, 0.25, 0);
 glm::vec3 bunnyZDir(0, 0, -1);
 float bunnyMaxHeight = -2.5;
@@ -811,7 +811,7 @@ bool increase = true;
 vector<glm::vec3> checkpoint_dirs = {glm::vec3(0, 0, 0), glm::vec3(-8.5, 0, 0),
                                      glm::vec3(8.5, 0, 0)};
 float angle = 0;
-float rotationSpeed = 0.1;
+float rotationSpeed = 0.08;
 
 int goodCheckpointIndex = 0;
 
@@ -1071,7 +1071,7 @@ void resetGame() {
     pos = glm::vec3(0, -5, -8);
     goodCheckpointIndex = rand() % 3;
     checkpointPos = glm::vec3(0, -2, -80);
-    speed = 0.08;
+    speed = 0.4;
     rotationSpeed = 0.1;
     bunnyHorizontalSpeed = 0.15;
     score = 0;
@@ -1097,7 +1097,7 @@ void display() {
     renderBoard();
     renderBunny();
     renderCheckpoint();
-    score += speed * 10;
+    // score += speed * 10;
     std::string scoreStr = std::to_string(score);
     if (faint) {
         renderText("Score:" + scoreStr, 25.0f, 750.0f, 1.0f,
